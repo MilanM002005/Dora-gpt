@@ -1,0 +1,9 @@
+venv/
+__pycache__/
+*.pyc
+checkpoints/
+data/tokenized.pt
+data/shakespeare.pt
+.DS_Store
+.idea/
+.vscode/

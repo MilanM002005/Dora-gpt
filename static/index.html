@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DoraGPT Workspace</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="theme-black"> <!-- Default theme -->
+    <div class="app-container">
+        <!-- Sidebar Navigation (Claude/GPT style) -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="brand">
+                    <i class="fa-solid fa-bolt brand-logo"></i>
+                    <div class="brand-text">
+                        <h1>DoraGPT</h1>
+                        <span>Workspace</span>
+                    </div>
+                </div>
+                <button class="btn btn-new-chat" id="btn-new-chat-sidebar">
+                    <i class="fa-solid fa-plus"></i> New Chat
+                </button>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Navigation Sections -->
+                <div class="nav-section">
+                    <span class="section-title">Workspace Tools</span>
+                    <nav class="nav-menu">
+                        <a href="#" class="nav-item" data-tab="dashboard">
+                            <i class="fa-solid fa-house"></i>
+                            <span>Dashboard</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="tokenizer">
+                            <i class="fa-solid fa-scissors"></i>
+                            <span>Tokenizer visualizer</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="model-config">
+                            <i class="fa-solid fa-sliders"></i>
+                            <span>Model Config</span>
+                        </a>
+                        <a href="#" class="nav-item" data-tab="training">
+                            <i class="fa-solid fa-terminal"></i>
+                            <span>Training logs</span>
+                        </a>
+                        <a href="#" class="nav-item active" data-tab="chat-playground">
+                            <i class="fa-solid fa-message"></i>
+                            <span>Chat Arena</span>
+                        </a>
+                    </nav>
+                </div>
+                
+                <!-- Recent Chats (GPT Style) -->
+                <div class="nav-section">
+                    <span class="section-title">Recent Chats</span>
+                    <div class="recent-chats-list">
+                        <a href="#" class="recent-chat-link active">
+                            <i class="fa-regular fa-comment"></i>
+                            <span>Shakespeare GPT</span>
+                        </a>
+                        <a href="#" class="recent-chat-link">
+                            <i class="fa-regular fa-comment"></i>
+                            <span>Model Architecture Q&A</span>
+                        </a>
+                        <a href="#" class="recent-chat-link">
+                            <i class="fa-regular fa-comment"></i>
+                            <span>Tokenizer explanation</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar Footer (Theme controls & profile) -->
+            <div class="sidebar-footer">
+                <div class="theme-control-panel">
+                    <span class="section-title">Change UI Theme</span>
+                    <div class="theme-selector">
+                        <button class="theme-btn theme-btn-white" data-theme="white" title="White (Light)"></button>
+                        <button class="theme-btn theme-btn-grey" data-theme="grey" title="Grey (Slate)"></button>
+                        <button class="theme-btn theme-btn-yellow" data-theme="yellow" title="Yellow (Warm)"></button>
+                        <button class="theme-btn theme-btn-black active" data-theme="black" title="Black (OLED)"></button>
+                    </div>
+                </div>
+                
+                <div class="status-box">
+                    <div class="status-row">
+                        <span class="status-label">Model Checkpoint:</span>
+                        <span class="badge badge-warning" id="model-status-badge">Checking...</span>
+                    </div>
+                    <span class="device-info"><i class="fa-solid fa-microchip"></i> Running on Local CPU</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Main Workspace Area -->
+        <main class="main-content">
+            <!-- Header bar -->
+            <header class="content-header">
+                <div class="model-badge">
+                    <span class="model-badge-name">DoraGPT 1M (Nano)</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                
+                <div class="system-status-indicator">
+                    <span class="status-pill offline" id="backend-status-pill">
+                        <span class="pulse-dot"></span>
+                        <span id="backend-status-text">Checking server...</span>
+                    </span>
+                </div>
+            </header>
+            
+            <!-- Tab: Chat Playground (Default GPT view) -->
+            <section id="tab-chat-playground" class="tab-pane active">
+                <div class="chat-workspace">
+                    <div class="chat-header-info">
+                        <h2>DoraGPT Arena</h2>
+                        <p>Interact with your custom DoraGPT model.</p>
+                    </div>
+
+                    <!-- Welcome Screen (GPT style, hidden when messages exist) -->
+                    <div class="chat-welcome-container" id="chat-welcome-screen">
+                        <div class="welcome-logo">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h3>How can I help you today?</h3>
+                        
+                        <div class="chat-warning-banner" id="chat-untrained-warning">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <span>DoraGPT is running on <strong>random weights</strong> (untrained). Go to the <strong>Dashboard</strong> and <strong>Training logs</strong> tabs to download/tokenize the dataset and train it first!</span>
+                        </div>
+                        
+                        <div class="welcome-suggestions-grid">
+                            <button class="suggestion-card" data-prompt="To be, or not to be, that is the question:">
+                                <span class="suggestion-title">Shakespeare Soliloquy</span>
+                                <span class="suggestion-desc">Complete Hamlet's famous speech style.</span>
+                            </button>
+                            <button class="suggestion-card" data-prompt="ROMEO: O speak again, bright angel!">
+                                <span class="suggestion-title">Romeo & Juliet Scene</span>
+                                <span class="suggestion-desc">Generate dramatic theater dialogue.</span>
+                            </button>
+                            <button class="suggestion-card" data-prompt="Shall I compare thee to a summer's day?">
+                                <span class="suggestion-title">Love Sonnet</span>
+                                <span class="suggestion-desc">Write an poetic verse in iambic pentameter.</span>
+                            </button>
+                            <button class="suggestion-card" data-prompt="Once upon a time in a faraway forest">
+                                <span class="suggestion-title">Fairy Tale Opener</span>
+                                <span class="suggestion-desc">Create the beginning of a classic story.</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat History Window -->
+                    <div class="chat-history-wrapper hidden" id="chat-history-wrapper">
+                        <div class="chat-history-feed" id="chat-history">
+                            <!-- Dynamically generated message items will land here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Input Panel (Claude style centered bottom) -->
+                    <div class="chat-input-container">
+                        <div class="chat-input-wrapper">
+                            <textarea id="chat-prompt-input" rows="1" placeholder="Send a message to DoraGPT..."></textarea>
+                            <div class="chat-input-controls">
+                                <div class="sliders-quick-adjust">
+                                    <div class="quick-slider">
+                                        <label>Temp: <span id="quick-temp-val">0.8</span></label>
+                                        <input type="range" id="quick-temp" min="0.1" max="2.0" step="0.1" value="0.8">
+                                    </div>
+                                    <div class="quick-slider">
+                                        <label>Top-K: <span id="quick-topk-val">40</span></label>
+                                        <input type="range" id="quick-topk" min="1" max="100" step="1" value="40">
+                                    </div>
+                                    <div class="quick-slider">
+                                        <label>Max Tokens: <span id="quick-length-val">100</span></label>
+                                        <input type="range" id="quick-length" min="10" max="300" step="10" value="100">
+                                    </div>
+                                </div>
+                                <button class="btn-send" id="btn-send-chat" disabled>
+                                    <i class="fa-solid fa-arrow-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="chat-disclaimer">DoraGPT is a local custom Transformer model. Results depend heavily on training configurations and epochs.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab: Dashboard -->
+            <section id="tab-dashboard" class="tab-pane">
+                <div class="settings-workspace">
+                    <div class="section-title-wrapper">
+                        <h3>System Status & Datasets</h3>
+                        <p>Configure model dependencies and download training materials.</p>
+                    </div>
+                    
+                    <div class="grid-layout">
+                        <!-- Setup Checklist -->
+                        <div class="glass-card span-2">
+                            <div class="card-header">
+                                <i class="fa-solid fa-list-check header-icon"></i>
+                                <h3>Dependency Checklist</h3>
+                            </div>
+                            <div class="card-body">
+                                <ul class="setup-checklist">
+                                    <li id="check-python">
+                                        <i class="fa-solid fa-circle-check check-icon text-green"></i>
+                                        <span>Python 3.11 Runtime Environment</span>
+                                        <span class="badge text-green" id="python-ver-badge">Verifying...</span>
+                                    </li>
+                                    <li id="check-pytorch">
+                                        <i class="fa-solid fa-circle-check check-icon text-green"></i>
+                                        <span>PyTorch CPU Compute Backend</span>
+                                        <span class="badge text-green" id="pytorch-ver-badge">Verifying...</span>
+                                    </li>
+                                    <li id="check-dataset">
+                                        <i class="fa-solid fa-circle-xmark check-icon text-red"></i>
+                                        <span>Shakespeare Dataset (shakespeare.txt)</span>
+                                        <button class="btn btn-sm btn-primary" id="btn-download-dataset">
+                                            <i class="fa-solid fa-download"></i> Download Dataset
+                                        </button>
+                                    </li>
+                                    <li id="check-tokenized">
+                                        <i class="fa-solid fa-circle-xmark check-icon text-red"></i>
+                                        <span>Tokenized Tensors Array (tokenized.pt)</span>
+                                        <button class="btn btn-sm btn-secondary" id="btn-tokenize-dataset" disabled>
+                                            Tokenize Dataset
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Telemetry Stats -->
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <i class="fa-solid fa-microchip header-icon"></i>
+                                <h3>Hardware & Profile</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="metric-block">
+                                    <span class="metric-label">Execution Target</span>
+                                    <span class="metric-val text-green">CPU Mode</span>
+                                </div>
+                                <div class="metric-block">
+                                    <span class="metric-label">Memory Utilization</span>
+                                    <span class="metric-val text-cyan">&lt; 500 MB RAM</span>
+                                </div>
+                                <div class="metric-block">
+                                    <span class="metric-label">Float Precision</span>
+                                    <span class="metric-val text-indigo">FP32 Single</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab: Tokenizer -->
+            <section id="tab-tokenizer" class="tab-pane">
+                <div class="settings-workspace">
+                    <div class="section-title-wrapper">
+                        <h3>BPE Tokenizer Playground</h3>
+                        <p>Translate strings into token integer arrays using GPT-2's BPE encoding.</p>
+                    </div>
+                    
+                    <div class="grid-layout">
+                        <div class="glass-card span-2">
+                            <div class="card-body">
+                                <textarea id="tokenizer-input" rows="5" placeholder="Type text here to inspect tokenizer mappings..."></textarea>
+                                <div class="tokenizer-actions">
+                                    <button class="btn btn-primary" id="btn-run-tokenizer">Tokenize text</button>
+                                    <button class="btn btn-secondary" id="btn-clear-tokenizer">Reset</button>
+                                </div>
+                                
+                                <div class="token-output-container hidden" id="token-output-container">
+                                    <h4>Tokenized Output (Hover token to view integer ID):</h4>
+                                    <div class="token-spans" id="token-spans"></div>
+                                    
+                                    <div class="token-stats-row">
+                                        <div class="token-stat">
+                                            <span class="stat-num" id="stat-num-chars">0</span>
+                                            <span class="stat-lbl">Characters</span>
+                                        </div>
+                                        <div class="token-stat">
+                                            <span class="stat-num" id="stat-num-tokens">0</span>
+                                            <span class="stat-lbl">Tokens</span>
+                                        </div>
+                                        <div class="token-stat">
+                                            <span class="stat-num" id="stat-ratio">0.0</span>
+                                            <span class="stat-lbl">Comp Ratio</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <i class="fa-solid fa-book header-icon"></i>
+                                <h3>Tokenizer Metrics</h3>
+                            </div>
+                            <div class="card-body vocab-info">
+                                <div class="info-row">
+                                    <span>Vocabulary Size</span>
+                                    <strong class="text-indigo">50,257 tokens</strong>
+                                </div>
+                                <div class="info-row">
+                                    <span>BPE Encoder</span>
+                                    <strong class="text-cyan">GPT-2 Byte-Pair</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab: Model Config -->
+            <section id="tab-model-config" class="tab-pane">
+                <div class="settings-workspace">
+                    <div class="section-title-wrapper">
+                        <h3>Model Settings</h3>
+                        <p>Configure model layer complexity and hyperparameter properties.</p>
+                    </div>
+                    
+                    <div class="grid-layout">
+                        <!-- Presets Selector -->
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <i class="fa-solid fa-cubes header-icon"></i>
+                                <h3>Architecture Settings</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="preset-options">
+                                    <label class="preset-card active" data-preset="nano">
+                                        <input type="radio" name="model-preset" value="nano" checked>
+                                        <div class="preset-details">
+                                            <span class="preset-title">Nano Preset (1M parameters)</span>
+                                            <p class="preset-desc">4 blocks • 128 embed dimension • 4 heads</p>
+                                        </div>
+                                    </label>
+                                    
+                                    <label class="preset-card" data-preset="micro">
+                                        <input type="radio" name="model-preset" value="micro">
+                                        <div class="preset-details">
+                                            <span class="preset-title">Micro Preset (10M parameters)</span>
+                                            <p class="preset-desc">6 blocks • 256 embed dimension • 8 heads</p>
+                                        </div>
+                                    </label>
+                                    
+                                    <label class="preset-card" data-preset="mini">
+                                        <input type="radio" name="model-preset" value="mini">
+                                        <div class="preset-details">
+                                            <span class="preset-title">Mini Preset (50M parameters)</span>
+                                            <p class="preset-desc">8 blocks • 512 embed dimension • 8 heads</p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Configuration Values -->
+                        <div class="glass-card span-2">
+                            <div class="card-header">
+                                <i class="fa-solid fa-code header-icon"></i>
+                                <h3>Config properties & code representation</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="config-grid">
+                                    <div class="config-field">
+                                        <label>d_model (Embedding Dimension)</label>
+                                        <input type="number" id="cfg-d-model" value="128" readonly>
+                                    </div>
+                                    <div class="config-field">
+                                        <label>n_heads (Self-Attention Heads)</label>
+                                        <input type="number" id="cfg-n-heads" value="4" readonly>
+                                    </div>
+                                    <div class="config-field">
+                                        <label>n_layers (Blocks count)</label>
+                                        <input type="number" id="cfg-n-layers" value="4" readonly>
+                                    </div>
+                                    <div class="config-field">
+                                        <label>seq_len (Max Context Length)</label>
+                                        <input type="number" id="cfg-seq-len" value="128" readonly>
+                                    </div>
+                                </div>
+                                
+                                <div class="code-preview-box">
+                                    <span class="code-tag">model/mini_gpt.py</span>
+                                    <pre><code class="language-python" id="code-snippet"># Instantiate NANO GPT configuration
+cfg = Config(
+    vocab_size = 50257,
+    seq_len    = 128,   # Context length
+    d_model    = 128,   # Vector size
+    n_heads    = 4,     # Attention heads
+    n_layers   = 4,     # Layers block count
+    d_ff       = 512    # FeedForward (4 * d_model)
+)
+model = MiniGPT(cfg)</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab: Training Logs -->
+            <section id="tab-training" class="tab-pane">
+                <div class="settings-workspace">
+                    <div class="section-title-wrapper">
+                        <h3>Model training console</h3>
+                        <p>Start PyTorch training loops on CPU and monitor convergence metrics.</p>
+                    </div>
+                    
+                    <div class="grid-layout">
+                        <!-- Training Panel Options -->
+                        <div class="glass-card">
+                            <div class="card-header">
+                                <i class="fa-solid fa-play header-icon"></i>
+                                <h3>Training Options</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="training-params-inputs">
+                                    <div class="form-group">
+                                        <label>Learning Rate</label>
+                                        <input type="number" id="train-lr" step="0.0001" value="0.0003">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Epochs</label>
+                                        <input type="number" id="train-epochs" min="1" max="20" value="5">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Batch Size</label>
+                                        <input type="number" id="train-batch" min="1" max="64" value="16">
+                                    </div>
+                                </div>
+                                
+                                <div class="training-actions">
+                                    <button class="btn btn-success btn-block" id="btn-start-training">
+                                        Start training loop
+                                    </button>
+                                    <div class="btn-group hidden" id="training-running-actions">
+                                        <button class="btn btn-warning" id="btn-pause-training">Pause</button>
+                                        <button class="btn btn-danger" id="btn-stop-training">Stop</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="metrics-summary">
+                                    <div class="metric-row">
+                                        <span>Status:</span>
+                                        <strong id="training-status-text">Idle</strong>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>Epoch:</span>
+                                        <strong id="metric-epoch">- / -</strong>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>Step:</span>
+                                        <strong id="metric-step">- / -</strong>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>Loss:</span>
+                                        <strong class="text-green" id="metric-loss">-</strong>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>Speed:</span>
+                                        <strong class="text-cyan" id="metric-speed">-</strong>
+                                    </div>
+                                    <div class="metric-row">
+                                        <span>ETA:</span>
+                                        <strong id="metric-eta">-</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Training Graph Panel -->
+                        <div class="glass-card span-2">
+                            <div class="card-header">
+                                <i class="fa-solid fa-chart-line header-icon"></i>
+                                <h3>Loss history curve</h3>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container" style="position: relative; height:240px; width:100%">
+                                    <canvas id="loss-chart"></canvas>
+                                </div>
+                                <div class="terminal-log-console">
+                                    <div class="console-header">
+                                        <i class="fa-solid fa-terminal"></i>
+                                        <span>Stdout Stream Logs</span>
+                                    </div>
+                                    <div class="console-output" id="training-console-output">
+[System] Web Server active. Ready to initiate training model configuration.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
